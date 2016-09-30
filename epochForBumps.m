@@ -9,7 +9,7 @@ clear all
 close all
 clc
 
-pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_30/events/';
+pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_58/events/';
 snames = dir([pathdata '*.set']);
 Nsj = size(snames,1);
 
@@ -22,11 +22,11 @@ end
 [~, Isort] = sort(subjctN);
 snames = snames(Isort);
 
-pathsave = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_30/events/ForBumps_OnRes_no20/';
+pathsave = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_58/events/ForBumps_OnRes_no20/';
 namesave = 'varForBumpsOn_Res12575.mat';
 saveTo = [pathsave namesave];
 
-info = ['varibles for HSMM code from Qiong; 100 Hz sampling freq.; filter 0.1 to 58 Hz;' ...
+info = ['varibles for HSMM code from Qiong; 125 Hz sampling freq.; filter 0.5 to 58 Hz;' ...
     'lenght trials[Onset, sep], conditions: TargetFan1, TagetFan2, FoilFan1, FoilFan2' ...
     ' NewFan1, NewFan2'];
 
