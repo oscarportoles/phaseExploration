@@ -17,10 +17,10 @@ pathevents = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/Corrected/';
 fnames = dir([pathevents '*.txt']);
 Nsj = size(fnames,1);
 
-pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_30/';
+pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_58/';
 snames = dir([pathdata '*.set']);
 
-pathsave = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_30/events/';
+pathsave = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS125bp05_58/events/';
 
 for sj=1:Nsj,
 %sj = 16;
