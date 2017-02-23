@@ -9,31 +9,13 @@ clear all
 close all
 clc
 
-pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS100bp1_35/events/';
+pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS100bp2_35/events/';
 snames = dir([pathdata '*.set']);
 Nsj = size(snames,1);
-
-% Order subject files by subject number
-subjctN = zeros(Nsj,1);
-for sj=1:Nsj,
-    number = strsplit(snames(sj).name(2:3), '_');
-    subjctN(sj) = str2num(number{1});
-end
-[~, Isort] = sort(subjctN);
-snames = snames(Isort);
-
-pathsave = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS100bp1_35/events/ForBumps_OnRes_no20/';
-namesave = 'varForBumpsOn_Res12575.mat';
-saveTo = [pathsave namesave];
-
+pathsave = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS100bp2_35/events/ForBumps_OnRes_no20/';
 info = ['varibles for HSMM code from Qiong; 100 Hz sampling freq.; filter 1 to 35 Hz;' ...
-    'lenght trials[Onset, sep], conditions: TargetFan1, TagetFan2, FoilFan1, FoilFan2'];
-
-% epochsOn = [[{'OnFoilFan1L'},{'OnFoilFan1S'}];[{'OnFoilFan2L'},{'OnFoilFan2S'}]; ... 
-%     [{'OnTargetFan1L'},{'OnTargetFan1S'}];[{'OnTargetFan2L'},{'OnTargetFan2S'}]; ...
-%     [{'OnNewFan1S'}, {'OnNewFan1L'}]];
-
-
+    'lenght trials[Onset, sep], conditions: TargetFan1, TagetFan2, FoilFan1, FoilFan2;' ...
+    'It epochs the data per subjects and does PCA per subject with a covariance matrix per trial'];
 % % Define epoching boundaries on time
 % init = -0.2;    % time [s] beginin of trial from Onset
 % fint = 0.16;    % time [s] end of trial from Response
@@ -47,27 +29,36 @@ trCode =   [[2 3 1]  % first column: Jelmer's code for short words
             [6 7 3]  % third column: new code
             [8 9 4]
             [10 11 5]];
+  
+% Order subject files by subject number
+subjctN = zeros(Nsj,1);
+for sj=1:Nsj,
+    number = strsplit(snames(sj).name(2:3), '_');
+    subjctN(sj) = str2num(number{1});
+end
+[~, Isort] = sort(subjctN);
+snames = snames(Isort);
 
-% variables that HSMM needs
-data = [];
-x = [];
-y = [];
-x5 = cell(1,5);
-y5 = cell(1,5);
-x20 = cell(1,Nsj);
-y20 = cell(1,Nsj);
-x20off = 0;
-conds = [];
-condsB = [];
-subjects = [];
-subjectsF = [];
 
 for sj=1:Nsj,
 %sj = 16;
+    % variables that HSMM needs
+    data = [];
+    x = [];
+    y = [];
+    x5 = cell(1,5);
+    y5 = cell(1,5);
+    conds = [];
+    condsB = [];
+    covar = 0;
+
     % Open subject dataset
     EEG = pop_loadset('filename',snames(sj).name ,'filepath',pathdata);
     EEG = eeg_checkset( EEG );
-
+        % Save dataset as:
+    namesave = strrep(snames(sj).name,'Events235.set','epochs235.mat');
+    saveTo = [pathsave namesave];
+    
     % get indexes to don't iterate empty events
     idxEvnt = [];
     jump = 0;
@@ -97,7 +88,7 @@ for sj=1:Nsj,
     fa2ta = [];
     fa1fo = [];
     fa2fo = [];
-    newpa = [];
+    %newpa = [];
     for i=1:length(EEG.event),
         if EEG.event(i).accur,
             if EEG.event(i).code == 2 | EEG.event(i).code == 3,
@@ -108,8 +99,8 @@ for sj=1:Nsj,
                 fa1fo(end+1) = EEG.event(i).RT;
             elseif EEG.event(i).code == 8 | EEG.event(i).code == 9,
                 fa2fo(end+1) = EEG.event(i).RT;
-            elseif EEG.event(i).code == 10 | EEG.event(i).code == 11,
-                newpa(end+1) = EEG.event(i).RT;
+%             elseif EEG.event(i).code == 10 | EEG.event(i).code == 11,
+%                 newpa(end+1) = EEG.event(i).RT;
             end
         end
     end  
@@ -119,21 +110,21 @@ for sj=1:Nsj,
     fa2ta(1:2:end) = [];
     fa1fo(1:2:end) = [];
     fa2fo(1:2:end) = [];
-    newpa(1:2:end) = [];
+    %newpa(1:2:end) = [];
 
     % do std + -
     fa1taSD(1) = mean(fa1ta) - 3 * std(fa1ta);
     fa2taSD(1) = mean(fa2ta) - 3 * std(fa2ta);
     fa1foSD(1) = mean(fa1fo) - 3 * std(fa1fo);
     fa2foSD(1) = mean(fa2fo) - 3 * std(fa2fo);
-    newpaSD(1) = mean(newpa) - 3 * std(newpa);
+    %newpaSD(1) = mean(newpa) - 3 * std(newpa);
 
     fa1taSD(2) = mean(fa1ta) + 3 * std(fa1ta);
     fa2taSD(2) = mean(fa2ta) + 3 * std(fa2ta);
     fa1foSD(2) = mean(fa1fo) + 3 * std(fa1fo);
     fa2foSD(2) = mean(fa2fo) + 3 * std(fa2fo);
-    newpaSD(2) = mean(newpa) + 3 * std(newpa);        
-    clear fa1ta fa2ta fa1fo fa2fo newpa
+    %newpaSD(2) = mean(newpa) + 3 * std(newpa);        
+    clear fa1ta fa2ta fa1fo fa2fo %newpa
 
     % check if the number of event is odd -> if not a event is missing
     if mod(length(idxEvnt),2), error('The number of events is not even'); end
@@ -152,13 +143,7 @@ for sj=1:Nsj,
             % check that both events are not RT ouliers, the response was
             % inaccurate in any of them and the reaction time is less than
             % 3 seconds
-% Selection based on .outRT, it was computed separating short and long
-% words
-%             if [EEG.event(idxEvnt(tr):idxEvnt(tr+1)).accur] & ...    
-%                     not([EEG.event(idxEvnt(tr):idxEvnt(tr+1)).outRT]) &...
-%                     [EEG.event(idxEvnt(tr)).RT < 3000],
-
-% Use the std values computed for Short land long words together
+            % Use the std values computed for Short land long words together
             
             if [EEG.event(idxEvnt(tr):idxEvnt(tr+1)).accur] & ...
                     [EEG.event(idxEvnt(tr)).RT < 3000],
@@ -174,20 +159,19 @@ for sj=1:Nsj,
                     dataTest = detrend(EEG.data(:,ini:fin)', 'linear');
                     if not(any(any((dataTest > 80)))) && not(any(any((dataTest < -80)))),
                         % Do all variable for the HSMM
-                        x = vertcat(x, size(data,1) + 1);   % first samle of this trial in x
-                        x20{sj} = vertcat(x20{sj}, size(data,1) + 1 - x20off);     %  begining of trials by subject
+                        x = vertcat(x, size(data,1) + 1);   % first samle of this trial in x; initialy data = []
                         x5{trialCode} = vertcat(x5{trialCode}, size(data,1) + 1); % begining of trials by condition
 
                         data = vertcat(data, dataTest);   % concatenate verticaly the data samples of a valid trial
 
                         y = vertcat(y, size(data,1));  % last sample of this trial
-                        y20{sj} = vertcat(y20{sj}, size(data,1) - x20off);   % last sample of a trial by subjects
                         y5{trialCode} = vertcat(y5{trialCode}, size(data,1)); % last sample of a trial by conditions
                         conds = vertcat(conds, trialCode);  %  condition of  each trial 
-                        subjects = vertcat(subjects, sj);   % subject of each trial
-
                         condsB =  vertcat(condsB, repmat(conds(end),size(dataTest,1),1)); % Condition of each sample
-                        subjectsF = vertcat(subjectsF, repmat(sj,size(dataTest,1),1));  % subject of each sample 
+                        subject = sj;
+                        % Trial covariance matrix
+                        dataTest = dataTest'; % transposes data test to do PCA like in Cohens's book
+                        covar = covar + (dataTest*dataTest')./(size(dataTest,2)-1);
                     end
                 end
             end
@@ -195,23 +179,27 @@ for sj=1:Nsj,
             error('Two consecutive trials dont have the same code')
         end
     end
-    x20off = size(data,1);
-    clear EEG
+    % PCA
+    covar = covar./length(x);   % mean covariance of all trials in a subject
+    [coeff10,latent10] = pcacov(covar);
+    %coeff10 = coeff(:,1:10);
+    %latent10 = latent(1:10);
+    if size(coeff10,1) ~= size(data,2), error('Error: PC matrix does nto macht data'), end
+    % PCA time seriers
+    score10 = data * coeff10;
+    normedscore10=zeros(size(score10));
+    means10 = mean(data,1);
+     % normalize (zscore) by trial
+    for i = 1:length(x)
+        normedscore10(x(i):y(i),:)=zscore(score10(x(i):y(i),:));
+    end
+    normedscore10 = normedscore10(:,1:10);
+    % save to a .mat file
+    save(saveTo, 'info','data','x','x5','y','y5','conds','condsB', ...
+        'subject','coeff10','score10','latent10','normedscore10', 'means10');
+    clear EEG normedscore10 dataTest coeff coeff10 latent latent10 score10
 end
 
-% Do PCA and z-scoring
-
-[coeff10 score10 latent10]= pca(data);
-
-normedscore10=zeros(size(score10));
-for i = 1:length(x)
-    normedscore10(x(i):y(i),:)=zscore(score10(x(i):y(i),:)); % normalize by trial
-end
-normedscore10=normedscore10(:,1:10); % take first 10 components
-
-% save to a .mat file
-save(saveTo, 'info','data','x','x5','x20','y','y5','y20','conds','condsB', ...
-    'subjects','subjectsF','coeff10','score10','latent10','normedscore10');
     
     
     
