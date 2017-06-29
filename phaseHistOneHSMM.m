@@ -8,7 +8,7 @@ clc
 
 nBump = 5;                          % number of bumps in HSMM
 plotHist = 0;                       % plot head histogram per subject 
-nBins = 18*2;                         % number of bins in the phase histogram
+nBins = 18;                         % number of bins in the phase histogram
 edges = linspace(-pi, pi, nBins+1);  % Does nBins from -pi to pi Bin edges
 width = abs(edges(1) - edges(2));        % width of bins
 binVal = edges(1:end-1) - diff(edges)/2;    % value of each bin

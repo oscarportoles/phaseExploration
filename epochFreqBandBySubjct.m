@@ -87,6 +87,7 @@ info = ['segment bandpass filtered data like if it were for a bumps HSMM;' ...
 % Define epoching boundaries on time
 init = 0;    % time [s] beginin of trial from Onset
 fint = 0;    % time [s] end of trial from Response
+initBL = 0.3;   % time [s] begining of baseline period, the end is init - 1 sample
 
 trCode =   [[2 3 1]  % first column: Jelmer's code for short words
             [4 5 2]  % second column: Jelmer's code for long words
@@ -98,9 +99,9 @@ trCode =   [[2 3 1]  % first column: Jelmer's code for short words
 for sj=1:NsjO,
     % variable to keep the data
 %     deltaEEG = [];
-    thetaEEG = [];
-    alphaEEG = [];
-    betaEEG = [];
+    thetaEEGbl = [];
+    alphaEEGbl = [];
+    betaEEGbl = [];
 %     gammaEEG = [];
     x = [];
     y = [];
@@ -126,7 +127,7 @@ for sj=1:NsjO,
 
         % Save dataset as:
     idSj = regexp(snamesO(sj).name, '_DS1');
-    namesave = [snamesO(sj).name(1:idSj) 'EpochBands100.mat'];
+    namesave = [snamesO(sj).name(1:idSj) 'PreStimEpochBands100.mat'];
     saveTo = [pathsave namesave];
 
     % get indexes to don't iterate empty events
@@ -207,7 +208,10 @@ for sj=1:NsjO,
             % Define epoch boundaries on samples
             ini = floor(EEG.event(idxEvnt(tr)).latency + init * EEG.srate + 1); % attention! add +1 to get the same segments ans in Jelmer's data 
             fin = round(EEG.event(idxEvnt(tr+1)).latency + fint * EEG.srate);
-
+            iniBL = ini - round(initBL * EEG.srate);
+            finBL = ini - 1;
+            durBL = finBL - iniBL + 1;
+            
             % Use the std values computed for Short land long words together  
             if [EEG.event(idxEvnt(tr):idxEvnt(tr+1)).accur] & ...
                     [EEG.event(idxEvnt(tr)).RT < 3000],
@@ -221,18 +225,23 @@ for sj=1:NsjO,
                     % Extract data epoch, detrend it and test amplitude artefacts
                     dataTest = detrend(EEG.data(:,ini:fin)', 'linear');
                     if not(any(any((dataTest > 80)))) && not(any(any((dataTest < -80)))),
-                        x = vertcat(x, size(thetaEEG,1) + 1);   % first samle of this trial in x; initialy thetaEEG = []
-                        x5{trialCode} = vertcat(x5{trialCode}, size(thetaEEG,1) + 1); % begining of trials by condition
+                        x = vertcat(x, size(thetaEEGbl,1) + 1);   % first samle of this trial in x; initialy thetaEEGbl = []
+                        x5{trialCode} = vertcat(x5{trialCode}, size(thetaEEGbl,1) + 1); % begining of trials by condition
 
                         % Segment & concatenate verticaly the data samples of a valid trial
+                        beforSz = size(thetaEEGbl,1);
                         %deltaEEG = vertcat(deltaEEG, EEGD.data(:,ini:fin)');
-                        thetaEEG = vertcat(thetaEEG, EEGT.data(:,ini:fin)');
-                        alphaEEG = vertcat(alphaEEG, EEGA.data(:,ini:fin)');
-                        betaEEG = vertcat(betaEEG, EEGB.data(:,ini:fin)');
+                        thetaEEGbl = vertcat(thetaEEGbl, EEGT.data(:,iniBL:finBL)');
+                        alphaEEGbl = vertcat(alphaEEGbl, EEGA.data(:,iniBL:finBL)');
+                        betaEEGbl = vertcat(betaEEGbl, EEGB.data(:,iniBL:finBL)');
                         %gammaEEG = vertcat(gammaEEG, EEGG.data(:,ini:fin)');
+                        % test that the baseline size is consistent
+                        if size(thetaEEGbl,1) - beforSz ~= durBL,
+                            error('The size of the baseline is not consisten')
+                        end
                         
-                        y = vertcat(y, size(thetaEEG,1));  % last sample of this trial
-                        y5{trialCode} = vertcat(y5{trialCode}, size(thetaEEG,1)); % last sample of a trial by conditions
+                        y = vertcat(y, size(thetaEEGbl,1));  % last sample of this trial
+                        y5{trialCode} = vertcat(y5{trialCode}, size(thetaEEGbl,1)); % last sample of a trial by conditions
                         conds = vertcat(conds, trialCode);  %  condition of  each trial 
                         condsB =  vertcat(condsB, repmat(conds(end),size(dataTest,1),1)); % Condition of each sample
                         subject = sj;
@@ -244,7 +253,7 @@ for sj=1:NsjO,
         end
     end
     % save to a .mat file
-    save(saveTo,'thetaEEG' ,'alphaEEG' ,'betaEEG','info', 'x', 'y', 'x5', 'y5', 'conds', 'condsB', 'subject')
+    save(saveTo,'thetaEEGbl' ,'alphaEEGbl' ,'betaEEGbl','info', 'x', 'y', 'x5', 'y5', 'conds', 'condsB', 'subject')
     clear EEG EEGT EEGA EEGB
     %clear EEG EEGD EEGT EEGA EEGB EEGG
 end

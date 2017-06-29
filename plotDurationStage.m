@@ -141,3 +141,30 @@ legend('EachSj','AllConct')
 title('Duration of each stage in a 6 bumps HSMM')
 ylabel('Duration [milliseconds * 10]')
 xlabel('Stages')
+
+
+% Standard deviation and mean durations of stages of all subjects
+pathdata = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS100bp2_35/events/ForBumps_OnRes_no20/hilber&HSMM/';
+names = dir([pathdata '*HilBads100.mat']);
+trDur = [];
+for sj =1:20,
+    load([pathdata names(sj).name], 'x', 'y');
+    yTr = y - x + 1;
+    trDur = vertcat(trDur, yTr);
+end
+
+dura = ones(size(eventprobs,2),6);
+for tr = 1:size(eventprobs,2),
+    dura(tr,2:end) = [1:300] * squeeze(eventprobs(:,tr,:));
+end
+dura = horzcat(dura, trDur);
+dura = diff(dura,1,2);
+    
+errorbar(mean(dura), std(dura),'o','LineWidth',2)
+set(0,'DefaultAxesFontSize',20,'DefaultTextFontSize',20);
+% yticks([0:10:100])
+% xticklabels({'0','10','20','30','40','50','60','70','80','90','100'})
+xlabel('stages')
+ylabel('time [sec]')
+title('Mean duration of stages')
+

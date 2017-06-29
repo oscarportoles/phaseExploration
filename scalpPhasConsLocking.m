@@ -9,7 +9,6 @@ clc
 nBump = 5;                          % number of bumps in HSMM
 nCh = 32;                           % number of channels
 freqBand = 'theta';                 % frequency band to be analyzed
-nRep = 400;                         % number of repetition to build a random PDF
 avStag = [11, 12,19, 46, 16, 12];   % average duration of each stage on samples
 avDur = sum(avStag);                % average duration of all trials in samples: sum
 fs = 100;                           % sampling frequency [Hz]              

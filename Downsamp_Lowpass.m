@@ -1,4 +1,4 @@
-% It downsamples the data to 125Hz and filter the data at 58 Hz with 
+% It downsamples the data to 100 or 125Hz and filter the data at X Hz with 
 % the same filter slope than the only low.
 % After a visual inspection of the data, we saw some subjects had high
 % amplitude 60 Hz line noise and a peak of power at 70 Hz
@@ -9,7 +9,7 @@
 clear all
 close all
 clc
-
+ 
 fs_DS = 100;
 savepath = '/Users/lab/Documents/MATLAB/Data_JB_AssoRec/DS100_EEGbands/';
 

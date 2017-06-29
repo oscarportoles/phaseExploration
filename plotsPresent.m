@@ -1,17 +1,17 @@
 
-tr = 13;
+tr = 17;
 
 % Probability distributions of bumps
 figure(tr)
 yTr = y(tr) - x(tr) + 1;
-plot(zeros(yTr,1),'LineWidth', 0.1)
-hold on
-plot([squeeze(eventprobs(1:yTr,tr,:))], 'LineWidth', 4)
+% plot(zeros(yTr,1),'LineWidth', 0.1)
+% hold on
+plot([squeeze(eventprobs(1:yTr,tr,:))], 'LineWidth', 3)
 title('Probability Distribution of Transition Locations')
 ylabel('Probability')
 xlabel('Samples [n] // One Trial //')
 legend({'1st trans.','2nd trans.','3rd trans.','4th trans.','5th trans.'})
-set(0,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
+set(0,'DefaultAxesFontSize',20,'DefaultTextFontSize',20);
 
 
 for bu = 1:bumpModl
@@ -91,6 +91,31 @@ title('Amplitude & Phase of EEG Theta Band')
 legend({'EEG Phase', 'EEG Ampli.'})
 set(0,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
 
+
+% Real part and pahse with interpolated data
+sj = 1;
+tr = 118;
+yTr = y(tr) - x(tr) + 1;
+t = 1:yTr;
+[hAx,hphase,hprob] =  plotyy(t, angle(hilbert(theta(x(tr):y(tr),1))),t,theta(x(tr):y(tr),1));
+hphase.LineWidth = 2;
+hprob.LineWidth = 2;
+xlabel('Samples [n] // One Trial //')
+ylabel(hAx(1),'Amplitud') % left y-axis
+hAx(1).YTick = [-pi,-pi/2,0,pi/2,pi];
+hAx(1).YTickLabel = {'\-pi','\-pi/2','0','\pi/2','\pi'};
+hAx(2).FontSize = 12;
+hAx(1).FontSize = 12;
+hold(hAx(1));
+plot(hAx(1), t,(pi/2).*ones(size(t)),'m')
+plot(hAx(1), t,(-pi/2).*ones(size(t)),'m')
+hold(hAx(2));
+plot(hAx(2), t,zeros(size(t)),'k')
+ylabel(hAx(1),'Phase [rad]') % right y-axis
+ylabel(hAx(2),'Amplitud theta band') % right y-axis
+title('Amplitude & Phase of EEG Theta Band')
+legend({'EEG Phase', 'EEG Ampli.'})
+set(0,'DefaultAxesFontSize',12,'DefaultTextFontSize',12);
 
 
 % Phase and probability distributions
@@ -226,24 +251,28 @@ legend({'1st trans.','2nd trans.','3rd trans.','4th trans.','5th trans.'},'Locat
 
 
 % ISPC all head
-[carX, carY] = pol2cart(bpcPhs, bpcMag);  % pol2cart([angle, radious])
+[carX, carY] = pol2cart(angle(mean(exp(1i*bpcAllArg), 3)), abs(mean(exp(1i*bpcAllArg), 3)));  % pol2cart([angle, radious])
+p = 0.05/(nCh*nBump);
+bpcCriH = sqrt(-log(p)/nSj);
 figure(5)
 for ch = 1:32
     subplot('Position', [position(ch,1),position(ch,2),side,side])
-    set(0,'DefaultAxesFontSize',8,'DefaultTextFontSize',8);
+    set(0,'DefaultAxesFontSize',12,'DefaultTextFontSize',12);
     for bu = 1:5
         %plot([1,2])
         h = compassRad(carX(ch,bu), carY(ch,bu));
         title(chNames(ch))
-        h.LineWidth = 2.5;
-        h.Color = colorbu{bu};
+        h.LineWidth = 2;
+        h.Color = colorbu(bu,:);
         hold on
     end
-    P = polaRad(edges, bpcCri * ones(size(edges)));
+    P = polaRad(linspace(-pi,pi,100),bpcCriH * ones(1,100));
     P.Color = 'k';
+    P.LineWidth = 0.5;
+    P.MarkerSize = 0.5;
     hold on
 end
-legend({'1st bump', '2nd bump','3th bump','4th bump','5th bump'})
+legend({'1st Trans.', '2nd Trans.','3th Trans.','4th Trans','5th Trans.'})
 
 % One channel ISPC
 [carX, carY] = pol2cart(ISPA,ISPC);
@@ -267,7 +296,8 @@ P.Color = 'k';
 % Test significancy on the prefrec phase angle between bumps at subject
 % level
 figure(1)
-xticks = {'4th vs 5th','3rd vs 5th','3rd vs 4th','2nd vs 5th','2nd vs 4th','2nd vs 3rd','1st vs 5th','1st vs 4th','1st vs 3th',' 1st vs 2nd'};
+xticks = {'4th vs 5th','3rd vs 5th','3rd vs 4th','2nd vs 5th','2nd vs 4th', ...
+          '2nd vs 3rd','1st vs 5th','1st vs 4th','1st vs 3th',' 1st vs 2nd'};
 alpha = 0.01;
 im = imagesc(pValBPCpha,[0,alpha]);
 c = colorbar;
@@ -282,7 +312,8 @@ c.Label.String = '';
 
 % Test Bump Phase Consistency BPC is higher than a Critical BPC. BPC higher
 % thant Critical BPC indicates that the Phase ocnsistency is ibove chance
-figure(22)
+bpcMag = abs(mean(exp(1i*bpcAllArg),3));
+figure(21)
 p = 0.05/(nCh*nBump);
 bpcCriH = sqrt(-log(p)/nSj);
 im = imagesc(bpcMag,[bpcCriH,1]);
@@ -291,7 +322,7 @@ cc = colormap(autumn);
 cc(1,:) = [0,0,0];
 colormap(cc)
 xticks = {'1st Trans.','2nd Trans.','3rd Trans.','4th Trans.', '5th Trans.'};
-title('Phase clustering across all subjects')
+title('\beta-band;Phase clustering across all subjects [all trials conc. PD*exp(i\theta)]')
 set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
 set(gca,'Ytick',[1:nCh],'YTickLabel',{locElect(:).labels})
 %set(gca,'Xtick',[1:nBump],'XTickLabel',xticks)
@@ -300,10 +331,31 @@ ylabel('Channels')
 %xlabel(['Critical Phase Consistency: ' num2str(bpcCri)])
 % xlabel('0.6 or higher consistency --> above-chance leve')
 c.Label.String = 'Clustering [0, 1]';
-c.Ticks = [7:10]./10;
+% c.Ticks = [7:10]./10;
 % c.TickLabels = {'0.6'};
 % c.TickLength = 0.05;
 
+
+% Plot mean phase angles between subjecta and in a single bump
+bpcArg = angle(mean(exp(1i*bpcAllArg),3));
+figure(23)
+im = imagesc(bpcArg);
+c = colorbar;
+cc = colormap(jet);
+xticks = {'1st Trans.','2nd Trans.','3rd Trans.','4th Trans.', '5th Trans.'};
+title('\beta-band;mean phase angle across all subjects [all trials conc. PD*exp(i\theta)]')
+set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
+set(gca,'Ytick',[1:nCh],'YTickLabel',{locElect(:).labels})
+%set(gca,'Xtick',[1:nBump],'XTickLabel',xticks)
+set(gca,'Xtick',[1:nBump],'XTickLabel',xticks,'XTickLabelRotation',45)
+ylabel('Channels')
+%xlabel(['Critical Phase Consistency: ' num2str(bpcCri)])
+% xlabel('0.6 or higher consistency --> above-chance leve')
+c.Label.String = 'Angle';
+% c.Ticks = [7:10]./10;
+% c.TickLength = 0.05;
+c.Ticks = [-pi,-pi/2,0,pi/2,pi];
+c.TickLabels = {'-pi','-pi/2','0','pi/2','pi'};
 
 
 % Plot consistency of phase angles between channels in a subjecta and a
@@ -327,6 +379,46 @@ set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
 c.Label.String = 'Clustering [0, 1]';
 c.Ticks = [5:10]./10;
 
+% Plot Phase clustering of whole head
+
+p = 0.05/(nBump);
+bpcCr = sqrt(-log(p)/nSj);
+figure(14)
+im = imagesc(bpcAllScArg');
+c = colorbar;
+cc = colormap(jet);
+cc(1,:) = [0,0,0];
+colormap(cc)
+xticks = {'1st Trans.','2nd Trans.','3rd Trans.','4th Trans.', '5th Trans.'};
+set(gca,'Xtick',[1:nBump],'XTickLabel',xticks,'XTickLabelRotation',45)
+%set(gca,'CLimMode', 'manual', 'AmbientLightColor', 'r')
+yticks = {'S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13','S14','S15','S16','S17','S18','S19','S20'};
+set(gca,'Ytick',[1:nSj],'YTickLabel',yticks)
+ylabel('Subjects')
+title('Whole head phase clustering')
+set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
+c.Label.String = 'Clustering [Critical, 1]';
+
+% Plot p-values of subjects with significant whole head clustering
+
+alpha = 0.05;%/(nSj*nBump); % Bomferroni correction
+figure(13)
+im = imagesc(pValZbpcScTrW',[0,alpha]);
+c = colorbar;
+cc = colormap(jet);
+cc(end,:) = [0,0,0];
+colormap(cc)
+xticks = {'1st Trans.','2nd Trans.','3rd Trans.','4th Trans.', '5th Trans.'};
+set(gca,'Xtick',[1:nBump],'XTickLabel',xticks,'XTickLabelRotation',45)
+%set(gca,'CLimMode', 'manual', 'AmbientLightColor', 'r')
+yticks = {'S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13','S14','S15','S16','S17','S18','S19','S20'};
+set(gca,'Ytick',[1:nSj],'YTickLabel',yticks)
+ylabel('Subjects')
+title('Significant whole head phase clustering')
+set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
+c.Label.String = 'p-value';
+%c.Ticks = [5:10]./10;
+
 
 % Plot and do a table of the number of p-values avobe alpha per bump and
 % channel
@@ -334,25 +426,52 @@ countPval = zeros(nCh,nBump);
 alpha = 0.05/(nCh*nSj*nBump); % Bomferroni correction
 for bu =1: nBump,
     for ch = 1:nCh,
-        countPval(ch,bu) = length(find(pValMi(ch,bu,:) < alpha));
+        countPval(ch,bu) = length(find(pValZbpcAll(ch,bu,:) <= alpha));
     end
 end
 
-
-figure(4)
+figure(9)
 im = imagesc(countPval);
 c = colorbar;
-colormap(gray(max(max(countPval))+1))
+colormap(gray(nSj-min(min(countPval))+1))
 xticks = {'1st Trans.','2nd Trans.','3rd Trans.','4th Trans.', '5th Trans.'};
-title('Significance analysis ( \alpha = 1.5x10^{-5})')
+title('\beta-band Significance analysis (z-value \alpha = 1.5x10^{-5}) [all trial concat.]')
 set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
 set(gca,'Ytick',[1:nCh],'YTickLabel',{locElect(:).labels})
 %set(gca,'Xtick',[1:nBump],'XTickLabel',xticks)
 set(gca,'Xtick',[1:nBump],'XTickLabel',xticks,'XTickLabelRotation',45)
 ylabel('Channels')
 c.Label.String = 'Number of subjects with significant Phase clustering';
-% c.Ticks = [0:max(max(countPval))+1];
+c.Ticks = [min(min(countPval))-1:nSj];
 % c.TickLabels = {'0', '1','2','3','4','5','6','7'};\
+
+
+% Plot and do a table of the number of p-values that are not significantly
+% equal to a zero phase difference between transition's prefered angle
+
+countPval = zeros(nCh,nBump*2);
+alpha = 0.05;
+for bu =1: nBump*2,
+    for ch = 1:nCh,
+        countPval(ch,bu) = length(find(pValGVbu(ch,:,bu) > alpha));
+    end
+end
+
+figure(9)
+im = imagesc(countPval);
+c = colorbar;
+colormap(gray(20 - min(min(countPval) +1)))
+% xticks = {'1st Trans.','2nd Trans.','3rd Trans.','4th Trans.', '5th Trans.'};
+title('H_{0}: angle difference = 0. number of subjects accepting H_{0} with \alpha = 0.05')
+set(im,'DefaultAxesFontSize',40,'DefaultTextFontSize',40);
+set(gca,'Ytick',[1:nCh],'YTickLabel',{locElect(:).labels})
+set(gca,'Xtick',[1:length(buPairLabels)],'XTickLabel',buPairLabels,'XTickLabelRotation',45)
+% set(gca,'Xtick',[1:nBump],'XTickLabel',xticks,'XTickLabelRotation',45)
+ylabel('Channels')
+c.Label.String = 'Number of subjects falling to reject H_{0}';
+c.Ticks = [min(min(countPval))-1:20];
+% c.TickLabels = {'0', '1','2','3','4','5','6','7'};\
+
 
 % Golbal field variability. gloabal mean of VAriability accross channels
 % All trials are time locked to the bumps expected location. The signals
@@ -456,7 +575,21 @@ for ch = 1:32
     for i = 1:6, line([duration(i) duration(i)], [10 15], 'Color', 'k'); end
 end
 
-
+for sj =1:10
+    figure(sj)
+    for ch = 1:32
+        subplot('Position', [position(ch,1),position(ch,2),side,side])
+        set(0,'DefaultAxesFontSize',8,'DefaultTextFontSize',8);
+        h = plot(squeeze(meanRe(:,ch,sj)));
+        hold on
+        plot(zeros(size(meanRe,1)))
+        hold off
+        title(chNames(ch))
+        ylabel('Amplitud [V]')
+        h.LineWidth = 1.5;
+        for i = 1:6, line([duration(i) duration(i)], [-3 3], 'Color', 'k'); end
+    end
+end
 
 
 figure(10)
@@ -527,3 +660,96 @@ ylabel('mean IallSPC [0,1]')
 xlabel('transition time-locked [samples]')
 set(0,'DefaultAxesFontSize',12,'DefaultTextFontSize',12);
 for i = 1:6, line([duration(i) duration(i)], [0.65, 0.75], 'Color', 'k'); end
+
+% Plot complx number of each transition for each trial at the bumps. It
+% only plots on channel
+colo = {'b','r','k','c','m'};
+
+ch = 1;
+for ch = 1:nCh
+    figure(ch)
+    subplot(2,3,1)
+    polar(squeeze(trArg(:,ch,1)), squeeze(trMod(:,ch,1)),'.')
+    title('1sr Transition')
+    subplot(2,3,2)
+    polar(squeeze(trArg(:,ch,2)), squeeze(trMod(:,ch,2)),'.')
+    title('2nd Transition')
+    subplot(2,3,3)
+    polar(squeeze(trArg(:,ch,3)), squeeze(trMod(:,ch,3)),'.')
+    title('3rd Transition')
+    subplot(2,3,4)
+    polar(squeeze(trArg(:,ch,4)), squeeze(trMod(:,ch,4)),'.')
+    title('4th Transition')
+    subplot(2,3,5)
+    polar(squeeze(trArg(:,ch,5)), squeeze(trMod(:,ch,5)),'.')
+    title('5th Transition')
+    subplot(2,3,6)
+    for bu = 1:nBump
+        compass(mean(trMod(:,ch,bu) .* exp(1i*trArg(:,ch,bu)), 1),colo{bu})
+        hold on
+    end
+    legend({'1st Trans.', '2nd Trans', '3rd Trans', '4th Trans', '5th Trans'}, 'Location', 'southeastoutside')
+    title(['\beta-band, Subject 1: ' locElect(ch).labels])
+end
+
+% Representation phase is bounded within [-pi/2, pi/2] for positive values
+% and within [-pi/2.-pi] & [pi/2,pi] for negative values of the signal
+t = linspace(-2*pi,2*pi,1024);
+to = ones(size(t));
+tz = zeros(size(t));
+
+yticks = {'-\pi','-2','-\pi/2','-1','0','1','\pi/2','2','\pi'};
+yticksLoc = [-pi,-2,-pi/2,-1,0,1,pi/2,2,pi];
+
+figure(1)
+y = 1*sinc(t);
+subplot(3,1,1)
+plot(y,'LineWidth',2)
+hold on
+plot(angle(hilbert(y)),'.')
+legend({'signal','phase'})
+plot(0.5.*pi.*to,'k')
+plot(0.5.*-pi.*to,'k')
+plot(tz,'k')
+set(gca,'Ytick',yticksLoc,'YTickLabel',yticks)
+ylim([-pi,pi])
+title('y = sinc(t)')
+
+y = 1*sinc(t) + 1*to;
+subplot(3,1,2)
+plot(y,'LineWidth',2)
+hold on
+plot(angle(hilbert(y)),'.')
+legend({'signal','phase'})
+plot(0.5.*pi.*to,'k')
+plot(0.5.*-pi.*to,'k')
+plot(tz,'k')
+set(gca,'Ytick',yticksLoc,'YTickLabel',yticks)
+ylim([-pi,pi])
+title('y = sinc(t) + 1')
+
+y = 1*sinc(t) - 1*to;
+subplot(3,1,3)
+plot(y,'LineWidth',2)
+hold on
+plot(angle(hilbert(y)),'.')
+legend({'signal','phase'})
+plot(0.5.*pi.*to,'k')
+plot(0.5.*-pi.*to,'k')
+plot(tz,'k')
+set(gca,'Ytick',yticksLoc,'YTickLabel',yticks)
+ylim([-pi,pi])
+title('y = sinc(t) - 1')
+
+y = 1*sinc(t) - 0.9*to;
+subplot(4,1,4)
+plot(y,'LineWidth',2)
+hold on
+plot(angle(hilbert(y)),'.')
+legend({'signal','phase'})
+plot(0.5.*pi.*to,'k')
+plot(0.5.*-pi.*to,'k')
+plot(tz,'k')
+set(gca,'Ytick',yticksLoc,'YTickLabel',yticks)
+ylim([-pi,pi])
+title('y = sinc(t) - 0.5')
